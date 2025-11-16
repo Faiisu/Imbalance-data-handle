@@ -40,7 +40,6 @@ All metrics below are computed on the 2,113-row test split with 1,533 "No" and 5
 | Duplication oversampling | Duplicate every `Yes` row (5,174 `No`, 4,447 `Yes`) | 0.97 | 0.95 | 0.94 | 0.95 |
 | SMOTE + KNN | `SMOTE(random_state=42)` on the train split | 0.71 | 0.48 | 0.61 | 0.54 |
 
-> Note: The notebook re-runs the same pipeline and grid search for each method, so the best parameters shown at the end (`n_neighbors=5`, `weights='distance'`) apply to every comparison.
 
 ## Next steps
 1. Try other estimators (Logistic Regression, Random Forest, Gradient Boosting) inside the same pipeline to compare against KNN.
