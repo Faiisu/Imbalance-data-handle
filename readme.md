@@ -1,55 +1,48 @@
-# Customer Churn – Easy Guide to Fix Imbalanced Data
+# Customer Churn - Easy Guide to Fix Imbalanced Data
 
-This Jupyter Notebook (`imbalance_handle.ipynb`) teaches how to spot and fix class imbalance in a churn dataset. The focus is on keeping the steps simple so you can see how each change helps the model catch customers who will churn.
+The notebook `imbalance_handle.ipynb` shows how to fix class imbalance in a churn dataset step by step. Every section uses simple language so you can follow the effect of each change on the K-Nearest Neighbors (KNN) model without needing advanced English.
 
 ## Files in this folder
-- `customer_churn(in).csv` – source data (7,043 rows, 21 columns).
-- `imbalance_handle.ipynb` – notebook with every step.
-- `requirement.txt` – libraries to install (`pandas`, `numpy`, `scikit-learn`, `imblearn`).
+- `customer_churn(in).csv` - source data (7,043 rows, 21 columns)
+- `imbalance_handle.ipynb` - notebook with code, outputs, and notes
+- `requirement.txt` - Python packages (`pandas`, `numpy`, `scikit-learn`, `imblearn`)
 
-## Quick start
-1. Use Python 3.10+ and (optional) create a virtual environment.
-2. Install packages: `pip install -r requirement.txt`
-3. Put the CSV in the same folder.
-4. Run `jupyter notebook imbalance_handle.ipynb` and execute the cells from top to bottom.
+## Setup
+1. Use Python 3.10 or newer and (optional) create a virtual environment.
+2. Install the libraries: `pip install -r requirement.txt`
+3. Place the CSV file in the same directory as the notebook.
+4. Run `jupyter notebook imbalance_handle.ipynb` and execute all cells in order.
 
-## What the notebook does
+## Notebook workflow
 1. **Explore and clean data**  
-   - Load the CSV, check summary stats with `describe()`, preview rows with `head()`, and count missing values.  
-   - After `dropna()` the training set has 3,641 “No” rows and 1,289 “Yes” rows, so the target is heavily imbalanced.
-
+   Load the CSV, display `describe()` and `head()`, and verify there are no missing values. The 70% training split contains 3,641 "No" rows and 1,289 "Yes" rows, so the target is clearly imbalanced.
 2. **Train/Test split (70/30)**  
-   - `df_train` contains the first 70% of rows and `df_test` keeps the rest.  
-   - Splitting before any balancing avoids data leakage.
-
+   Split the dataframe before any balancing to avoid data leakage: `df_train` gets the first 70% of rows, `df_test` the remaining 30%.
 3. **Feature builder**  
-   - Function `split_Xy` removes the `Churn` column and keeps only numeric columns. KNN needs numbers only.
-
+   Function `split_Xy` drops `Churn` from the feature set and keeps numeric columns only, which is required for KNN.
 4. **Pipeline + Grid Search**  
-   - Pipeline = `StandardScaler` + `KNeighborsClassifier`.  
-   - `GridSearchCV` tries 9 values of `n_neighbors` × 2 weight settings (uniform/distance) with 5-fold CV to find the best combo for every scenario.
+   Build a pipeline with `StandardScaler` + `KNeighborsClassifier`, then run `GridSearchCV` (5-fold) across 9 neighbor counts and 2 weight schemes. This search is repeated for every training scenario so that each model uses tuned hyperparameters.
+5. **Balancing strategies (train data only)**  
+   - **Baseline** uses the raw `df_train` split.
+   - **Fix size sampling** randomly samples the same number of "Yes" and "No" rows (1,289 each) before fitting.
+   - **Oversampling by duplication** duplicates every minority example and appends it to the training set (resulting in 5,174 "No" and 4,447 "Yes").
+   - **SMOTE** applies `SMOTE(random_state=42)` to `X_train`/`y_train` to create synthetic minority samples before running the same pipeline.
+6. **Compare on the hold-out test set**  
+   Each trained model predicts on `X_test`, and `classification_report` plus class counts show precision, recall, f1-score, and accuracy for the 30% hold-out data (1,533 "No", 580 "Yes").
 
-5. **Three balancing strategies (train set only)**  
-   - **Baseline**: use raw `df_train`. Shows how imbalance hurts the minority class.  
-   - **Fix size sampling**: randomly sample the same count of `Yes` and `No` (1,289 each) to train a balanced model.  
-   - **Oversampling by duplication**: duplicate all `Yes` rows and add them back to `df_train`, so the minority class is larger.  
-   - **SMOTE**: apply `SMOTE(random_state=42)` to `X_train`/`y_train`, then fit the same pipeline. This cell requires `imblearn`; install from `requirement.txt` first.
+## Evaluation summary (from the current notebook outputs)
+All metrics below are computed on the 2,113-row test split with 1,533 "No" and 580 "Yes" customers.
 
-6. **Compare models on the hold-out test set**  
-   - Every model predicts on `X_test`, and the notebook prints `classification_report` so you can compare precision, recall, f1, and accuracy.
+| Method | Train adjustment | Accuracy | Precision (Yes) | Recall (Yes) | F1 (Yes) |
+| --- | --- | --- | --- | --- | --- |
+| Baseline | Original train split | 0.78 | 0.64 | 0.46 | 0.54 |
+| Fix size sampling | Randomly sample 1,289 `Yes` and 1,289 `No` | 0.72 | 0.49 | 0.76 | 0.60 |
+| Duplication oversampling | Duplicate every `Yes` row (5,174 `No`, 4,447 `Yes`) | 0.97 | 0.95 | 0.94 | 0.95 |
+| SMOTE + KNN | `SMOTE(random_state=42)` on the train split | 0.71 | 0.48 | 0.61 | 0.54 |
 
-## Sample results (re-run locally)
-All numbers below evaluate on the 30% test split (1,533 “No”, 580 “Yes”).
+> Note: The notebook re-runs the same pipeline and grid search for each method, so the best parameters shown at the end (`n_neighbors=5`, `weights='distance'`) apply to every comparison.
 
-| Method | Best params | Accuracy | f1 (Churn = Yes) | Notes |
-| --- | --- | --- | --- | --- |
-| Baseline | `n_neighbors=11`, `weights='uniform'` | 0.78 | 0.54 | Good for “No”, weak recall for “Yes”. |
-| Fix size sampling | same as baseline | 0.72 | 0.60 | Recall for “Yes” jumps to 0.76 at the cost of “No”. |
-| Duplication oversampling | `n_neighbors=1`, `weights='uniform'` | 0.72 | 0.48 | Keeps accuracy but still struggles to lift recall. |
-| SMOTE + KNN | (run notebook cell after installing `imblearn`) | — | — | Creates synthetic “Yes” rows; check the report in the notebook for the exact numbers. |
-
-## Tips for further work
-1. Try other models (Logistic Regression, Random Forest) with the same pipeline idea.
-2. Tune `n_neighbors`, weight type, or SMOTE settings to search for better recall vs. precision balance.
-3. Export the `classification_report` outputs to CSV or plots for presentations.
-
+## Next steps
+1. Try other estimators (Logistic Regression, Random Forest, Gradient Boosting) inside the same pipeline to compare against KNN.
+2. Tune the neighbor count, weight type, or SMOTE parameters (k-neighbors, sampling strategy) to trade off recall and precision for the churn class.
+3. Export the `classification_report` tables or confusion matrices to CSV/plots to use in presentations or automated reports.
