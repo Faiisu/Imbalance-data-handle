@@ -1,4 +1,4 @@
-# Customer Churn - Easy Guide to Fix Imbalanced Data
+# Customer Churn - Fix Imbalanced Data
 
 The notebook `imbalance_handle.ipynb` shows how to fix class imbalance in a churn dataset step by step. you can follow the effect of each change on the K-Nearest Neighbors (KNN) model
 
